@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>福井市・事故回避ナビ（30拠点版）</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <style>
+        #map { height: 100vh; width: 100%; z-index: 1; }
+        body { margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; }
+        .ui-panel {
+            position: absolute; top: 10px; left: 10px; right: 10px;
+            background: rgba(255, 255, 255, 0.9); padding: 8px; z-index: 1000;
+            text-align: center; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .mode-select { margin-top: 5px; display: flex; justify-content: center; gap: 10px; }
+        .mode-btn { background: #fff; border: 1px solid #ccc; padding: 3px 10px; font-size: 11px; border-radius: 4px; font-weight: bold; }
+        .mode-btn.active { background: #1a73e8; color: white; border-color: #1a73e8; }
+
+        .bottom-panel {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: #ffffff; padding: 10px 15px 30px; z-index: 1000;
+            border-radius: 20px 20px 0 0; box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
+            max-height: 180px; overflow-y: auto; transition: max-height 0.3s;
+        }
+        .bottom-panel:active, .bottom-panel:hover { max-height: 60vh; }
+        .pull-bar { width: 40px; height: 5px; background: #ccc; border-radius: 3px; margin: 0 auto 10px; }
+        .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .btn-spot { background: #1a73e8; color: white; border: none; padding: 10px 2px; border-radius: 6px; font-size: 11px; font-weight: bold; min-height: 40px; }
+        .leaflet-routing-container { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="ui-panel">
+        <div id="dest-label" style="font-weight:bold;">目的地を選択（全30箇所）</div>
+        <div class="mode-select">
+            <button id="btn-bike" class="mode-btn active" onclick="changeMode('bicycle')">🚲 自転車</button>
+            <button id="btn-foot" class="mode-btn" onclick="changeMode('foot')">🚶 歩行者</button>
+        </div>
+    </div>
+
+    <div class="bottom-panel">
+        <div class="pull-bar"></div>
+        <div class="btn-grid">
+            <button class="btn-spot" onclick="navigate([36.0652, 136.2216], '福井駅')">🚉 福井駅</button>
+            <button class="btn-spot" onclick="navigate([36.0700, 136.2500], '福井東IC')">🚗 福井東IC</button>
+            <button class="btn-spot" onclick="navigate([36.0350, 136.2200], '福井IC')">高速入口</button>
+            <button class="btn-spot" onclick="navigate([36.0371, 136.1965], 'ベル')">🛍️ ベル</button>
+            <button class="btn-spot" onclick="navigate([36.0880, 136.2200], 'エルパ')">🏢 エルパ</button>
+            <button class="btn-spot" onclick="navigate([36.0665, 136.2415], 'パリオ')">🏬 パリオ</button>
+            <button class="btn-spot" onclick="navigate([36.0620, 136.1850], 'アピタ')">🛒 アピタ</button>
+            <button class="btn-spot" onclick="navigate([36.0750, 136.2300], 'ハピリン')">💎 ハピリン</button>
+            <button class="btn-spot" onclick="navigate([36.1050, 136.2350], 'ワイプラザ')">📦 ワイプラ</button>
+            <button class="btn-spot" onclick="navigate([36.0768, 136.2125], '福大')">🎓 福大</button>
+            <button class="btn-spot" onclick="navigate([36.0715, 136.2165], '美術館')">🎨 美術館</button>
+            <button class="btn-spot" onclick="navigate([36.0480, 136.2350], '図書館')">📖 図書館</button>
+            <button class="btn-spot" onclick="navigate([36.0645, 136.2190], '郷土歴史館')">歴史館</button>
+            <button class="btn-spot" onclick="navigate([36.0610, 136.2180], '県庁')">🏛️ 福井県庁</button>
+            <button class="btn-spot" onclick="navigate([36.0522, 136.2210], '足羽山')">🌳 足羽山</button>
+            <button class="btn-spot" onclick="navigate([36.0615, 136.2230], '柴田神社')">⛩️ 柴田神社</button>
+            <button class="btn-spot" onclick="navigate([36.0650, 136.2150], '養浩館')">🏯 養浩館</button>
+            <button class="btn-spot" onclick="navigate([36.0550, 136.2050], '運動公園')">⚽ 運動公園</button>
+            <button class="btn-spot" onclick="navigate([36.0700, 136.2000], '西公園')">🌸 西公園</button>
+            <button class="btn-spot" onclick="navigate([36.0600, 136.2300], 'セーレン')">🏟️ セーレン</button>
+            <button class="btn-spot" onclick="navigate([36.0800, 136.2350], '県立病院')">🏥 県立病院</button>
+            <button class="btn-spot" onclick="navigate([36.0700, 136.2150], '済生会病院')">🏥 済生会</button>
+            <button class="btn-spot" onclick="navigate([36.0600, 136.2000], '赤十字')">🏥 日赤病院</button>
+            <button class="btn-spot" onclick="navigate([36.0950, 136.2100], '新田塚')">🚲 新田塚</button>
+            <button class="btn-spot" onclick="navigate([36.0400, 136.2400], '成和')">🏘️ 成和</button>
+            <button class="btn-spot" onclick="navigate([36.0850, 136.2000], '幾久')">🏢 幾久公園</button>
+            <button class="btn-spot" onclick="navigate([36.0500, 136.2500], '東福井')">📍 東福井</button>
+            <button class="btn-spot" onclick="navigate([36.0800, 136.1800], '森田')">🏘️ 森田駅</button>
+            <button class="btn-spot" onclick="navigate([36.0200, 136.2000], '清明')">📍 清明</button>
+            <button class="btn-spot" onclick="navigate([36.1000, 136.2200], '高木')">📍 高木</button>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script>
+        const map = L.map('map', { zoomControl: false }).setView([35.945, 136.185], 14); // 危険地帯が見えやすい初期位置に調整
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        let userLoc = [35.943, 136.188]; // 初期現在地も危険地帯の周辺に仮設定
+        let routingControl = null;
+        let lastTarget = null;
+        let lastTargetName = "";
+        let currentMode = 'bicycle';
+
+        // 送っていただいた16拠点のデータを登録
+        const accidents = [
+            L.latLng(35.943611, 136.188500),
+            L.latLng(35.943444, 136.188417),
+            L.latLng(35.942972, 136.188472),
+            L.latLng(35.943389, 136.188056),
+            L.latLng(35.943556, 136.185917),
+            L.latLng(35.943722, 136.185028),
+            L.latLng(35.943861, 136.182639),
+            L.latLng(35.944472, 136.180250),
+            L.latLng(35.943917, 136.180250),
+            L.latLng(35.943806, 136.179778),
+            L.latLng(35.943833, 136.178639),
+            L.latLng(35.945361, 136.179694),
+            L.latLng(35.945583, 136.179833),
+            L.latLng(35.945889, 136.180028),
+            L.latLng(35.946667, 136.180500),
+            L.latLng(35.947583, 136.181111)
+        ];
+
+        // マップ上に赤い円を描画
+        accidents.forEach(latLng => {
+            L.circle(latLng, { radius: 35, color: 'red', weight: 1, fillColor: 'red', fillOpacity: 0.4 }).addTo(map);
+        });
+
+        function changeMode(mode) {
+            currentMode = mode;
+            document.getElementById('btn-bike').classList.remove('active');
+            document.getElementById('btn-foot').classList.remove('active');
+            if(mode === 'bicycle') document.getElementById('btn-bike').classList.add('active');
+            if(mode === 'foot') document.getElementById('btn-foot').classList.add('active');
+            if (lastTarget) navigate(lastTarget, lastTargetName);
+        }
+
+        function navigate(target, name) {
+            lastTarget = target;
+            lastTargetName = name;
+            document.getElementById('dest-label').innerText = "目的地: " + name;
+            if (routingControl) map.removeControl(routingControl);
+
+            const start = L.latLng(userLoc);
+            const end = L.latLng(target);
+            let waypoints = [start];
+            
+            // ルート付近の危険箇所を迂回する経由地を計算
+            const midPoint = L.latLng((start.lat + end.lat) / 2, (start.lng + end.lng) / 2);
+            for(let acc of accidents) {
+                if (acc.distanceTo(midPoint) < 500) {
+                    waypoints.push(L.latLng(acc.lat + 0.003, acc.lng + 0.003));
+                    break; 
+                }
+            }
+            waypoints.push(end);
+
+            const serviceUrl = currentMode === 'foot' 
+                ? 'https://router.project-osrm.org/route/v1/foot' 
+                : 'https://router.project-osrm.org/route/v1/bicycle';
+
+            routingControl = L.Routing.control({
+                waypoints: waypoints,
+                router: L.Routing.osrmv1({ serviceUrl: serviceUrl }),
+                lineOptions: { styles: [{ color: '#1a73e8', weight: 7, opacity: 0.8 }] },
+                createMarker: () => null,
+                addWaypoints: false,
+                fitSelectedRoutes: true
+            }).addTo(map);
+        }
+
+        map.locate({setView: false, watch: true});
+        map.on('locationfound', (e) => userLoc = [e.latlng.lat, e.latlng.lng]);
+    </script>
+</body>
+</html>

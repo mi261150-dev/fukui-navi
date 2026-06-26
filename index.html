@@ -35,7 +35,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
     <script>
-        // 鯖江駅と西山公園が綺麗に収まる位置
         const map = L.map('map', { zoomControl: false }).setView([35.945, 136.181], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
@@ -43,78 +42,11 @@
         const targetDest = [35.9439, 136.1736];   // 西山公園
         
         let routingControl = null;
+        let backupLayer = L.layerGroup().addTo(map);
         let currentMode = 'bicycle';
 
-        // ご指定いただいた16箇所の事故地点
+        // 16箇所の事故地点
         const accidents = [
-            L.latLng(35.943611, 136.188500),
-            L.latLng(35.943444, 136.188417),
-            L.latLng(35.942972, 136.188472),
-            L.latLng(35.943389, 136.188056),
-            L.latLng(35.943556, 136.185917),
-            L.latLng(35.943722, 136.185028),
-            L.latLng(35.943861, 136.182639),
-            L.latLng(35.944472, 136.180250),
-            L.latLng(35.943917, 136.180250),
-            L.latLng(35.943806, 136.179778),
-            L.latLng(35.943833, 136.178639),
-            L.latLng(35.945361, 136.179694),
-            L.latLng(35.945583, 136.179833),
-            L.latLng(35.945889, 136.180028),
-            L.latLng(35.946667, 136.180500),
-            L.latLng(35.947583, 136.181111)
-        ];
-
-        // 赤い危険円を配置
-        accidents.forEach(latLng => {
-            L.circle(latLng, { radius: 30, color: 'red', weight: 1, fillColor: 'red', fillOpacity: 0.4 }).addTo(map);
-        });
-
-        function changeMode(mode) {
-            currentMode = mode;
-            document.getElementById('btn-bike').classList.remove('active');
-            document.getElementById('btn-foot').classList.remove('active');
-            if(mode === 'bicycle') document.getElementById('btn-bike').classList.add('active');
-            if(mode === 'foot') document.getElementById('btn-foot').classList.add('active');
-            
-            calculateRoute();
-        }
-
-        function calculateRoute() {
-            if (routingControl) map.removeControl(routingControl);
-
-            const start = L.latLng(sabaeStation);
-            const end = L.latLng(targetDest);
-            let waypoints = [start];
-            
-            // 事故地点を避けて大通りに誘導するための経由地計算
-            const midPoint = L.latLng((start.lat + end.lat) / 2, (start.lng + end.lng) / 2);
-            for(let acc of accidents) {
-                if (acc.distanceTo(midPoint) < 400) {
-                    // 危険地帯の北側の大通りへ少しシフト
-                    waypoints.push(L.latLng(acc.lat + 0.002, acc.lng + 0.002));
-                    break; 
-                }
-            }
-            waypoints.push(end);
-
-            // モードに応じたOSRMサービスURL
-            const serviceUrl = currentMode === 'foot' 
-                ? 'https://router.project-osrm.org/route/v1/foot' 
-                : 'https://router.project-osrm.org/route/v1/bicycle';
-
-            routingControl = L.Routing.control({
-                waypoints: waypoints,
-                router: L.Routing.osrmv1({ serviceUrl: serviceUrl }),
-                lineOptions: { styles: [{ color: '#1a73e8', weight: 6, opacity: 0.8 }] },
-                createMarker: () => null,
-                addWaypoints: false,
-                fitSelectedRoutes: true
-            }).addTo(map);
-        }
-
-        // 起動時に初期ルートを表示
-        calculateRoute();
-    </script>
-</body>
-</html>
+            L.latLng(35.943611, 136.188500), L.latLng(35.943444, 136.188417),
+            L.latLng(35.942972, 136.188472), L.latLng(35.943389, 136.188056),
+            L.latLng(35.943556, 136.185917), L.latLng(35.943722, 136.1

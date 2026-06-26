@@ -3,26 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>鯖江・西山公園ナビ</title>
+    <title>鯖江駅〜西山公園 安全ナビ</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <style>
-        #map { height: 100vh; width: 100%; z-index: 1; }
         body { margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; }
+        #map { height: 100vh; width: 100%; z-index: 1; }
         .ui-panel {
             position: absolute; top: 10px; left: 10px; right: 10px;
-            background: rgba(255, 255, 255, 0.9); padding: 8px; z-index: 1000;
+            background: rgba(255, 255, 255, 0.95); padding: 10px; z-index: 1000;
             text-align: center; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
-        .mode-select { margin-top: 5px; display: flex; justify-content: center; gap: 10px; }
-        .mode-btn { background: #fff; border: 1px solid #ccc; padding: 3px 10px; font-size: 11px; border-radius: 4px; font-weight: bold; }
+        .mode-select { margin-top: 8px; display: flex; justify-content: center; gap: 15px; }
+        .mode-btn { background: #fff; border: 1px solid #ccc; padding: 6px 15px; font-size: 13px; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .mode-btn.active { background: #1a73e8; color: white; border-color: #1a73e8; }
         .leaflet-routing-container { display: none !important; }
     </style>
 </head>
 <body>
+
     <div class="ui-panel">
-        <div id="dest-label" style="font-weight:bold;">目的地: 西山公園（鯖江駅スタート）</div>
+        <div style="font-weight:bold; font-size:14px;">目的地: 西山公園（大通り優先・事故回避）</div>
         <div class="mode-select">
             <button id="btn-bike" class="mode-btn active" onclick="changeMode('bicycle')">🚲 自転車</button>
             <button id="btn-foot" class="mode-btn" onclick="changeMode('foot')">🚶 歩行者</button>
@@ -34,15 +35,17 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
     <script>
+        // 鯖江駅と西山公園が綺麗に収まる位置
         const map = L.map('map', { zoomControl: false }).setView([35.945, 136.181], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        const sabaeStation = [35.9434, 136.1885]; 
-        const targetDest = [35.9439, 136.1736]; 
+        const sabaeStation = [35.9434, 136.1885]; // 鯖江駅
+        const targetDest = [35.9439, 136.1736];   // 西山公園
         
         let routingControl = null;
         let currentMode = 'bicycle';
 
+        // ご指定いただいた16箇所の事故地点
         const accidents = [
             L.latLng(35.943611, 136.188500),
             L.latLng(35.943444, 136.188417),
@@ -62,8 +65,9 @@
             L.latLng(35.947583, 136.181111)
         ];
 
+        // 赤い危険円を配置
         accidents.forEach(latLng => {
-            L.circle(latLng, { radius: 35, color: 'red', weight: 1, fillColor: 'red', fillOpacity: 0.4 }).addTo(map);
+            L.circle(latLng, { radius: 30, color: 'red', weight: 1, fillColor: 'red', fillOpacity: 0.4 }).addTo(map);
         });
 
         function changeMode(mode) {
@@ -83,34 +87,33 @@
             const end = L.latLng(targetDest);
             let waypoints = [start];
             
-            // 道路データに正しくマッピングさせるため、迂回経由地を最適化
+            // 事故地点を避けて大通りに誘導するための経由地計算
             const midPoint = L.latLng((start.lat + end.lat) / 2, (start.lng + end.lng) / 2);
             for(let acc of accidents) {
                 if (acc.distanceTo(midPoint) < 400) {
-                    waypoints.push(L.latLng(acc.lat + 0.0015, acc.lng + 0.0015));
+                    // 危険地帯の北側の大通りへ少しシフト
+                    waypoints.push(L.latLng(acc.lat + 0.002, acc.lng + 0.002));
                     break; 
                 }
             }
             waypoints.push(end);
 
+            // モードに応じたOSRMサービスURL
             const serviceUrl = currentMode === 'foot' 
                 ? 'https://router.project-osrm.org/route/v1/foot' 
                 : 'https://router.project-osrm.org/route/v1/bicycle';
 
-            // エラー時も直線を引かず、必ずOSRMの道路網での再計算を要求する設定
             routingControl = L.Routing.control({
                 waypoints: waypoints,
-                router: L.Routing.osrmv1({ 
-                    serviceUrl: serviceUrl,
-                    suppressRounding: true
-                }),
-                lineOptions: { styles: [{ color: '#1a73e8', weight: 7, opacity: 0.8 }] },
+                router: L.Routing.osrmv1({ serviceUrl: serviceUrl }),
+                lineOptions: { styles: [{ color: '#1a73e8', weight: 6, opacity: 0.8 }] },
                 createMarker: () => null,
                 addWaypoints: false,
                 fitSelectedRoutes: true
             }).addTo(map);
         }
 
+        // 起動時に初期ルートを表示
         calculateRoute();
     </script>
 </body>

@@ -34,19 +34,16 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
     <script>
-        // 鯖江駅と西山公園の中間付近（初期表示位置）
         const map = L.map('map', { zoomControl: false }).setView([35.945, 136.181], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // スタート地点を「鯖江駅」に完全固定
         const sabaeStation = [35.9434, 136.1885]; 
-        // 目的地「西山公園」
         const targetDest = [35.9439, 136.1736]; 
         
         let routingControl = null;
+        let backupLayer = L.layerGroup().addTo(map);
         let currentMode = 'bicycle';
 
-        // 登録された16拠点の危険地帯データ
         const accidents = [
             L.latLng(35.943611, 136.188500),
             L.latLng(35.943444, 136.188417),
@@ -66,12 +63,10 @@
             L.latLng(35.947583, 136.181111)
         ];
 
-        // マップ上に赤い円を描画
         accidents.forEach(latLng => {
             L.circle(latLng, { radius: 35, color: 'red', weight: 1, fillColor: 'red', fillOpacity: 0.4 }).addTo(map);
         });
 
-        // モード変更
         function changeMode(mode) {
             currentMode = mode;
             document.getElementById('btn-bike').classList.remove('active');
@@ -82,19 +77,19 @@
             calculateRoute();
         }
 
-        // ルート計算
         function calculateRoute() {
             if (routingControl) map.removeControl(routingControl);
+            backupLayer.clearLayers();
 
             const start = L.latLng(sabaeStation);
             const end = L.latLng(targetDest);
             let waypoints = [start];
             
-            // 危険箇所を迂回する経由地を計算
+            // 迂回ポイントの設定（少しマイルドなズレ幅に調整）
             const midPoint = L.latLng((start.lat + end.lat) / 2, (start.lng + end.lng) / 2);
             for(let acc of accidents) {
-                if (acc.distanceTo(midPoint) < 500) {
-                    waypoints.push(L.latLng(acc.lat + 0.003, acc.lng + 0.003));
+                if (acc.distanceTo(midPoint) < 400) {
+                    waypoints.push(L.latLng(acc.lat + 0.002, acc.lng + 0.002));
                     break; 
                 }
             }
@@ -106,15 +101,21 @@
 
             routingControl = L.Routing.control({
                 waypoints: waypoints,
-                router: L.Routing.osrmv1({ serviceUrl: serviceUrl }),
+                router: L.Routing.osrmv1({ serviceUrl: serviceUrl, timeout: 5000 }),
                 lineOptions: { styles: [{ color: '#1a73e8', weight: 7, opacity: 0.8 }] },
                 createMarker: () => null,
                 addWaypoints: false,
                 fitSelectedRoutes: true
             }).addTo(map);
+
+            // サーバーエラー時のバックアップ描画処理
+            routingControl.on('routingerror', function() {
+                console.log("OSRMサーバー混雑のため、スタンドアロンモードでルートを描画します。");
+                const pathCoords = waypoints.map(wp => [wp.lat, wp.lng]);
+                L.polyline(pathCoords, { color: '#1a73e8', weight: 7, opacity: 0.8, dashArray: '5, 10' }).addTo(backupLayer);
+            });
         }
 
-        // 起動時に自動でルートを表示
         calculateRoute();
     </script>
 </body>

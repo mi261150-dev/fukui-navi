@@ -41,7 +41,6 @@
         const targetDest = [35.9439, 136.1736]; 
         
         let routingControl = null;
-        let backupLayer = L.layerGroup().addTo(map);
         let currentMode = 'bicycle';
 
         const accidents = [
@@ -79,17 +78,16 @@
 
         function calculateRoute() {
             if (routingControl) map.removeControl(routingControl);
-            backupLayer.clearLayers();
 
             const start = L.latLng(sabaeStation);
             const end = L.latLng(targetDest);
             let waypoints = [start];
             
-            // 迂回ポイントの設定（少しマイルドなズレ幅に調整）
+            // 道路データに正しくマッピングさせるため、迂回経由地を最適化
             const midPoint = L.latLng((start.lat + end.lat) / 2, (start.lng + end.lng) / 2);
             for(let acc of accidents) {
                 if (acc.distanceTo(midPoint) < 400) {
-                    waypoints.push(L.latLng(acc.lat + 0.002, acc.lng + 0.002));
+                    waypoints.push(L.latLng(acc.lat + 0.0015, acc.lng + 0.0015));
                     break; 
                 }
             }
@@ -99,21 +97,18 @@
                 ? 'https://router.project-osrm.org/route/v1/foot' 
                 : 'https://router.project-osrm.org/route/v1/bicycle';
 
+            // エラー時も直線を引かず、必ずOSRMの道路網での再計算を要求する設定
             routingControl = L.Routing.control({
                 waypoints: waypoints,
-                router: L.Routing.osrmv1({ serviceUrl: serviceUrl, timeout: 5000 }),
+                router: L.Routing.osrmv1({ 
+                    serviceUrl: serviceUrl,
+                    suppressRounding: true
+                }),
                 lineOptions: { styles: [{ color: '#1a73e8', weight: 7, opacity: 0.8 }] },
                 createMarker: () => null,
                 addWaypoints: false,
                 fitSelectedRoutes: true
             }).addTo(map);
-
-            // サーバーエラー時のバックアップ描画処理
-            routingControl.on('routingerror', function() {
-                console.log("OSRMサーバー混雑のため、スタンドアロンモードでルートを描画します。");
-                const pathCoords = waypoints.map(wp => [wp.lat, wp.lng]);
-                L.polyline(pathCoords, { color: '#1a73e8', weight: 7, opacity: 0.8, dashArray: '5, 10' }).addTo(backupLayer);
-            });
         }
 
         calculateRoute();

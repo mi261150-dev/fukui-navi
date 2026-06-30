@@ -2,92 +2,64 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>鯖江駅〜鯖江市役所 ルートマップ</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>鯖江駅〜道の駅西山公園（事故回避ルート）</title>
     <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
+        /* 画面全体にマップを表示 */
         #map {
+            height: 100vh;
             width: 100%;
-            height: 100%;
         }
+        body { margin: 0; padding: 0; }
     </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
 </head>
 <body>
 
     <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.js"></script>
     <script>
-        // 1. 地図の初期化
-        const map = L.map('map').setView([35.943, 136.180], 15);
+        function initMap() {
+            // 1. マップの初期化（鯖江駅周辺を中心に）
+            const sabaeStation = { lat: 35.9433, lng: 136.1884 };
+            const map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 15,
+                center: sabaeStation
+            });
 
-        // 2. 地図タイルの読み込み
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        // --- 3. 正確な位置データ ---
-        const sabaeStation = [35.94318, 136.18844];    // スタート：鯖江駅
-        const sabaeCityOffice = [35.9446, 136.1741];  // 目的地：鯖江市役所（正面玄関）
-
-        // 事故現場の座標リスト
-        const accidentCoords = [
-            [35.943611, 136.188500], [35.943444, 136.188417], [35.942972, 136.188472], 
-            [35.943389, 136.188056], [35.943556, 136.185917], [35.943722, 136.185028], 
-            [35.943861, 136.182639], [35.944472, 136.180250], [35.943917, 136.180250], 
-            [35.943806, 136.179778], [35.943833, 136.178639], [35.945361, 136.179694], 
-            [35.945583, 136.179833], [35.945889, 136.180028], [35.946667, 136.180500], 
-            [35.947583, 136.181111]
-        ];
-
-        // 事故現場を地図にプロット（赤い円）
-        accidentCoords.forEach((coord) => {
-            L.circleMarker(coord, {
-                radius: 6,
-                fillColor: "#ff3333",
-                color: "#fff",
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.8
-            }).addTo(map);
-        });
-
-        // --- 4. 自動で「道の上」を判定してナビ線を引く仕組み ---
-        // 事故現場の固まるエリアを完全に南側に大きく迂回し、大通りを正確に通る経由地を生成
-        const routingControl = L.Routing.control({
-            waypoints: [
-                L.latLng(sabaeStation[0], sabaeStation[1]),
-                L.latLng(35.9416, 136.1881), // 鯖江駅西交差点（道の上）
-                L.latLng(35.9419, 136.1809), // 昭和町交差点（道の上）
-                L.latLng(35.9422, 136.1751), // 水落町交差点（道の上）
-                L.latLng(sabaeCityOffice[0], sabaeCityOffice[1])
-            ],
-            lineOptions: {
-                styles: [{ color: '#0066ff', opacity: 0.8, weight: 6 }]
-            },
-            createMarker: function(i, wp, nWps) {
-                if (i === 0) {
-                    return L.marker(wp.latLng).bindPopup('<b>スタート: 鯖江駅</b>');
-                } else if (i === nWps - 1) {
-                    return L.marker(wp.latLng).bindPopup('<b>目的地: 鯖江市役所</b>');
+            // 2. ルート描画用のサービスをセットアップ
+            const directionsService = new google.maps.DirectionsService();
+            const directionsRenderer = new google.maps.DirectionsRenderer({
+                map: map,
+                polylineOptions: {
+                    strokeColor: "#FF0000", // ルートの線の色（赤）
+                    strokeOpacity: 0.8,
+                    strokeWeight: 5
                 }
-                return null; // 途中の自動生成マーカーは非表示にする
-            },
-            show: false, // テキストの道案内ナビゲーションパネルは隠す
-            addWaypoints: false,
-            draggableWaypoints: false
-        }).addTo(map);
+            });
 
-        // 5. 画面の自動画角調整
-        const bounds = L.latLngBounds([sabaeStation, sabaeCityOffice, ...accidentCoords]);
-        map.fitBounds(bounds, { padding: [40, 40] });
+            // 3. 事故現場（回避エリア）の座標
+            const accidentLocation = { lat: 35.9435, lng: 136.1853 }; // 嚮陽通り付近
 
-    </script>
-</body>
-</html>
+            // 4. 経由地（ウェイポイント）を設定して事故現場を強制迂回
+            // ※車ルートの南側大通り（県道104号・212号）を通るように経由地を指定
+            const waypoints = [
+                {
+                    location: new google.maps.LatLng(35.9388, 136.1855), // 鯖江高校前交差点付近
+                    stopover: false
+                },
+                {
+                    location: new google.maps.LatLng(35.9392, 136.1742), // 有定町交差点付近
+                    stopover: false
+                }
+            ];
+
+            // 5. ルートの配信リクエスト
+            const request = {
+                origin: sabaeStation, // 出発地: 鯖江駅
+                destination: { lat: 35.9463, lng: 136.1718 }, // 目的地: 道の駅 西山公園
+                waypoints: waypoints, // 事故回避のための経由地
+                optimizeWaypoints: true,
+                travelMode: google.maps.TravelMode.DRIVING // 自動車モード（WALKING, BICYCLEに変更可能）
+            };
+
+            // 6. ルートを計算してマップ

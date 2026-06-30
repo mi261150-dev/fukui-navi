@@ -2,51 +2,104 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>鯖江駅〜西山公園 安全ナビ</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>鯖江駅〜西山公園ルート・事故現場マップ</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; }
-        #map { height: 100vh; width: 100%; z-index: 1; }
-        .ui-panel {
-            position: absolute; top: 10px; left: 10px; right: 10px;
-            background: rgba(255, 255, 255, 0.95); padding: 10px; z-index: 1000;
-            text-align: center; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        /* 画面いっぱいに地図を表示（スマホ最適化） */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
         }
-        .mode-select { margin-top: 8px; display: flex; justify-content: center; gap: 15px; }
-        .mode-btn { background: #fff; border: 1px solid #ccc; padding: 6px 15px; font-size: 13px; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        .mode-btn.active { background: #1a73e8; color: white; border-color: #1a73e8; }
-        .leaflet-routing-container { display: none !important; }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        /* ポップアップの文字を読みやすく */
+        .leaflet-popup-content {
+            font-size: 14px;
+            font-family: sans-serif;
+        }
     </style>
 </head>
 <body>
 
-    <div class="ui-panel">
-        <div style="font-weight:bold; font-size:14px;">目的地: 西山公園（大通り優先・事故回避）</div>
-        <div class="mode-select">
-            <button id="btn-bike" class="mode-btn active" onclick="changeMode('bicycle')">🚲 自転車</button>
-            <button id="btn-foot" class="mode-btn" onclick="changeMode('foot')">🚶 歩行者</button>
-        </div>
-    </div>
-
     <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
-        const map = L.map('map', { zoomControl: false }).setView([35.945, 136.181], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // 1. 地図の初期化（鯖江駅と西山公園の中間あたりを中心に設定）
+        const map = L.map('map').setView([35.944, 136.175], 15);
 
-        const sabaeStation = [35.9434, 136.1885]; // 鯖江駅
-        const targetDest = [35.9439, 136.1736];   // 西山公園
+        // 2. OpenStreetMapのタイルレイヤーを追加
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // --- ランドマークの設定 ---
+        const sabaeStation = [35.9427, 136.1870]; // 鯖江駅
+        const nishiyamaPark = [35.9490, 136.1685]; // 西山公園
+
+        // 鯖江駅のマーカー（緑色風）
+        L.marker(sabaeStation).addTo(map)
+            .bindPopup('<b>スタート: 鯖江駅</b>').openPopup();
+
+        // 西山公園のマーカー（青色）
+        L.marker(nishiyamaPark).addTo(map)
+            .bindPopup('<b>ゴール: 西山公園</b>');
+
+        // 3. 簡易的なおすすめ徒歩ルート（一般的な長泉寺交差点経由のライン）
+        const routePoints = [
+            sabaeStation,
+            [35.9430, 136.1818], // 鯖江駅前交差点付近
+            [35.9442, 136.1802], 
+            [35.9438, 136.1750], // 市役所付近
+            [35.9448, 136.1725], // 古町交差点付近
+            [35.9475, 136.1700], 
+            nishiyamaPark
+        ];
         
-        let routingControl = null;
-        let backupLayer = L.layerGroup().addTo(map);
-        let currentMode = 'bicycle';
+        // ルートの線を引く（太さ5、半透明の青）
+        L.polyline(routePoints, {color: '#3388ff', weight: 5, opacity: 0.7}).addTo(map);
 
-        // 16箇所の事故地点
-        const accidents = [
-            L.latLng(35.943611, 136.188500), L.latLng(35.943444, 136.188417),
-            L.latLng(35.942972, 136.188472), L.latLng(35.943389, 136.188056),
-            L.latLng(35.943556, 136.185917), L.latLng(35.943722, 136.1
+        // --- 4. 事故現場の座標リスト（赤色の円形マーカーで表示） ---
+        const accidentCoords = [
+            [35.943611, 136.188500], // 35°56'37.0"N 136°11'18.6"E
+            [35.943444, 136.188417], // 35°56'36.4"N 136°11'18.3"E
+            [35.942972, 136.188472], // 35°56'34.7"N 136°11'18.5"E
+            [35.943389, 136.188056], // 35°56'36.2"N 136°11'17.0"E
+            [35.943556, 136.185917], // 35°56'36.8"N 136°11'09.3"E
+            [35.943722, 136.185028], // 35°56'37.4"N 136°11'06.1"E
+            [35.943861, 136.182639], // 35°56'37.9"N 136°10'57.5"E
+            [35.944472, 136.180250], // 35°56'40.1"N 136°10'48.9"E
+            [35.943917, 136.180250], // 35°56'38.1"N 136°10'48.9"E
+            [35.943806, 136.179778], // 35°56'37.7"N 136°10'47.2"E
+            [35.943833, 136.178639], // 35°56'37.8"N 136°10'43.1"E
+            [35.945361, 136.179694], // 35°56'43.3"N 136°10'46.9"E
+            [35.945583, 136.179833], // 35°56'44.1"N 136°10'47.4"E
+            [35.945889, 136.180028], // 35°56'45.2"N 136°10'48.1"E
+            [35.946667, 136.180500], // 35°56'48.0"N 136°10'49.8"E
+            [35.947583, 136.181111]  // 35°56'51.3"N 136°10'52.0"E
+        ];
+
+        // 事故現場を地図にマッピング
+        accidentCoords.forEach((coord, index) => {
+            L.circleMarker(coord, {
+                radius: 8,
+                fillColor: "#ff3333",
+                color: "#000",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map).bindPopup(`⚠️ 事故現場地点 ${index + 1}`);
+        });
+
+        // 5. すべてのピンが画面に収まるように自動でズーム調整
+        const allPoints = [sabaeStation, nishiyamaPark, ...accidentCoords];
+        const bounds = L.latLngBounds(allPoints);
+        map.fitBounds(bounds, { padding: [50, 50] });
+
+    </script>
+</body>
+</html>

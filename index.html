@@ -1,76 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>鯖江駅〜西山公園前 ルートマップ</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        .leaflet-popup-content {
+            font-size: 14px;
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
-        // 1. 地図の初期化（鯖江駅を中心に設定）
-        const map = L.map('map').setView([35.943, 136.184], 15);
+        // 1. 地図の初期化
+        const map = L.map('map').setView([35.945, 136.175], 15);
 
         // 2. OpenStreetMapのタイルレイヤーを追加
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // --- ランドマークの設定（修正版） ---
-        const sabaeStation = [35.9427, 136.1870]; // 鯖江駅
-        const nishiyamaPark = [35.9496, 136.1643]; // 西山公園（道の駅・案内所付近の正しい位置）
+        // --- ランドマークの設定 ---
+        const sabaeStation = [35.9427, 136.1870];      // 鯖江駅
+        const nishiyamaParkStation = [35.9482, 136.1682]; // 目的地：西山公園駅（西山公園前）
 
         // 鯖江駅のマーカー
         L.marker(sabaeStation).addTo(map)
             .bindPopup('<b>スタート: 鯖江駅</b>').openPopup();
 
-        // 西山公園のマーカー
-        L.marker(nishiyamaPark).addTo(map)
-            .bindPopup('<b>ゴール: 西山公園</b>');
+        // 西山公園前のマーカー
+        L.marker(nishiyamaParkStation).addTo(map)
+            .bindPopup('<b>目的地: 西山公園前（西山公園駅）</b>');
 
-        // 3. 鯖江駅から西山公園へのルート（事故現場の道路を通過する経路）
-        const routePoints = [
-            sabaeStation,
-            [35.9436, 136.1885], // 事故現場エリアへ向かう交差点
-            [35.9444, 136.1802], // 事故現場エリアの北端付近
-            [35.9458, 136.1750], // 市役所前を通過
-            [35.9472, 136.1700], // 長泉寺交差点方面へ
-            nishiyamaPark
-        ];
-        
-        // ルートの線を引く
-        L.polyline(routePoints, {color: '#3388ff', weight: 5, opacity: 0.7}).addTo(map);
-
-        // --- 4. 事故現場の座標リスト ---
+        // --- 3. 事故現場の座標リスト ---
         const accidentCoords = [
-            [35.943611, 136.188500], // 35°56'37.0"N 136°11'18.6"E
-            [35.943444, 136.188417], // 35°56'36.4"N 136°11'18.3"E
-            [35.942972, 136.188472], // 35°56'34.7"N 136°11'18.5"E
-            [35.943389, 136.188056], // 35°56'36.2"N 136°11'17.0"E
-            [35.943556, 136.185917], // 35°56'36.8"N 136°11'09.3"E
-            [35.943722, 136.185028], // 35°56'37.4"N 136°11'06.1"E
-            [35.943861, 136.182639], // 35°56'37.9"N 136°10'57.5"E
-            [35.944472, 136.180250], // 35°56'40.1"N 136°10'48.9"E
-            [35.943917, 136.180250], // 35°56'38.1"N 136°10'48.9"E
-            [35.943806, 136.179778], // 35°56'37.7"N 136°10'47.2"E
-            [35.943833, 136.178639], // 35°56'37.8"N 136°10'43.1"E
-            [35.945361, 136.179694], // 35°56'43.3"N 136°10'46.9"E
-            [35.945583, 136.179833], // 35°56'44.1"N 136°10'47.4"E
-            [35.945889, 136.180028], // 35°56'45.2"N 136°10'48.1"E
-            [35.946667, 136.180500], // 35°56'48.0"N 136°10'49.8"E
-            [35.947583, 136.181111]  // 35°56'51.3"N 136°10'52.0"E
+            [35.943611, 136.188500], // 1
+            [35.943444, 136.188417], // 2
+            [35.942972, 136.188472], // 3
+            [35.943389, 136.188056], // 4
+            [35.943556, 136.185917], // 5
+            [35.943722, 136.185028], // 6
+            [35.943639, 136.182417], // 7（ルート接続用に微調整）
+            [35.943917, 136.180250], // 9
+            [35.943806, 136.179778], // 10
+            [35.943833, 136.178639], // 11
+            [35.944472, 136.180250], // 8
+            [35.945361, 136.179694], // 12
+            [35.945583, 136.179833], // 13
+            [35.945889, 136.180028], // 14
+            [35.946667, 136.180500], // 15
+            [35.947583, 136.181111]  // 16
         ];
 
         // 事故現場を赤い丸でプロット
         accidentCoords.forEach((coord, index) => {
             L.circleMarker(coord, {
-                radius: 8,
+                radius: 7,
                 fillColor: "#ff3333",
-                color: "#000",
-                weight: 1,
+                color: "#fff",
+                weight: 1.5,
                 opacity: 1,
                 fillOpacity: 0.8
             }).addTo(map).bindPopup(`⚠️ 事故現場地点 ${index + 1}`);
         });
 
-        // 5. 画面起動時に、鯖江駅とすべての事故現場が収まる画角に自動調整
-        // （西山公園まで入れると広域になりすぎるため、まずは現場周辺をクローズアップします）
-        const focusPoints = [sabaeStation, ...accidentCoords];
-        const bounds = L.latLngBounds(focusPoints);
-        map.fitBounds(bounds, { padding: [40, 40] });
-
-    </script>
-    
+        // --- 4. 事故現場を通過して西山公園前に至るルートライン ---
+        const routePoints = [
+            sabaeStation,
+            [35.942972, 136.188472], //

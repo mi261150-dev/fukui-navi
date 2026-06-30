@@ -3,45 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <title>Sabae Bypass Route</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <style>
         #map { height: 100vh; width: 100%; }
-        body { margin: 0; }
+        body { margin: 0; padding: 0; }
     </style>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
 </head>
 <body>
+
     <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
     <script>
-        function initMap() {
-            // 鯖江駅を中心にマップを初期化
-            const map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 15,
-                center: { lat: 35.9430, lng: 136.1888 }
-            });
+        // 1. マップの初期化（鯖江駅周辺）
+        const map = L.map('map').setView([35.9430, 136.1888], 15);
 
-            const directionsService = new google.maps.DirectionsService();
-            const directionsRenderer = new google.maps.DirectionsRenderer({ map: map });
+        // 2. 地図タイルの読み込み（OpenStreetMap）
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
-            // 事故現場（嚮陽通り〜つつじ通り）を完全に北側から大きく迂回する経由地
-            const waypoints = [
-                { location: new google.maps.LatLng(35.9472, 136.1920), stopover: false }, // 鯖江駅から北上した交差点
-                { location: new google.maps.LatLng(35.9535, 136.1885), stopover: false }  // 西山公園駅より北側の安全な大通り
-            ];
+        // 3. 事故現場の座標（マーカー表示用）
+        const accidentCoords = [35.9435, 136.1853];
+        L.marker(accidentCoords, {
+            icon: L.divIcon({
+                className: 'custom-div-icon',
+                html: "<div style='background-color:red;color:white;padding:5px;border-radius:5px;font-weight:bold;font-size:12px;white-space:nowrap;'>⚠️ 事故通行止</div>",
+                iconSize: [30, 42],
+                iconAnchor: [15, 42]
+            })
+        }).addTo(map);
 
-            const request = {
-                origin: { lat: 35.9430, lng: 136.1888 },      // 出発地: 鯖江駅
-                destination: { lat: 35.9519, lng: 136.1856 }, // 目的地: 西山公園駅（正しい座標）
-                waypoints: waypoints,
-                optimizeWaypoints: true,
-                travelMode: google.maps.TravelMode.DRIVING     // WALKING や BICYCLE に変更可能
-            };
-
-            directionsService.route(request, function(result, status) {
-                if (status === google.maps.DirectionsStatus.OK) {
-                    directionsRenderer.setDirections(result);
-                }
-            });
-        }
+        // 4. 事故現場を回避する北側迂回ルートの描画
+        // [緯度, 経度] の順
+        L.Routing.control({
+            waypoints: [
+                L.latLng(35.9430, 136.1888), // 出発地: 鯖江駅
+                L.latLng(35.9472, 136.1920), // 経由地1: 北上した交差点
+                L.latLng(35.9535, 136.1885), // 経由地2: 事故北側の安全な大通り
+                L.latLng(35.9519, 136.1856)  // 目的地: 西山公園駅（正しい位置）
+            ],
+            routeWhileDragging: false,
+            draggableWaypoints: false,
+            addWaypoints: false,
+            lineOptions: {
+                styles: [{ color: 'blue', opacity: 0.7, weight: 6 }]
+            }
+        }).addTo(map);
     </script>
 </body>
 </html>

@@ -23,7 +23,7 @@
 
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <script>
-        // 座標定義（[経度, 緯度] の順になります ※Leafletと逆なので注意）
+        // 座標定義 [経度, 緯度] 
         const sabaeStation = [136.18844, 35.94318];        // 鯖江駅
         const michinoEkiNishiyama = [136.1687, 35.9493]; // 道の駅 西山公園
 
@@ -37,31 +37,37 @@
             [136.181111, 35.947583]
         ];
 
-        // 事故現場を避ける安全な大通りルート
+        // 【修正】実際の道路（大通り）の形状に完全に合わせたルート座標
         const safeRoutePoints = [
             sabaeStation,
-            [136.1883, 35.9425], 
-            [136.1881, 35.9416], 
-            [136.1809, 35.9419], 
-            [136.1751, 35.9422], 
-            [136.1753, 35.9437], 
-            [136.1756, 35.9466], 
-            [136.1758, 35.9482], 
-            [136.1758, 35.9488], 
-            [136.1717, 35.9484], 
-            michinoEkiNishiyama
+            [136.18826, 35.94232], // 駅前ロータリーを出て南へ
+            [136.18809, 35.94162], // 鯖江駅西交差点を西へ右折
+            [136.18539, 35.94172], // 県道134号線上を進む
+            [136.18260, 35.94183], 
+            [136.18086, 35.94192], // 昭和町交差点を通過
+            [136.17743, 35.94212], 
+            [136.17512, 35.94220], // 水落町交差点を北へ右折（つつじ通りへ）
+            [136.17524, 35.94352], // つつじ通り（県道229号）を北上
+            [136.17544, 35.94511], 
+            [136.17562, 35.94657], // 栄町交差点を通過
+            [136.17582, 35.94821], 
+            [136.17588, 35.94883], // 桜町交差点を西へ左折
+            [136.17382, 35.94868], // 西へ直進
+            [136.17173, 35.94843], // 長泉寺交差点を通過
+            [136.16972, 35.94879], // 西山公園交差点を通過
+            michinoEkiNishiyama   // 道の駅 西山公園に到着
         ];
 
         // 地図の初期化
         const map = new maplibregl.Map({
             container: 'map',
-            style: 'https://tiles.openfreemap.org/styles/liberty', // 無料のマップスタイル
+            style: 'https://tiles.openfreemap.org/styles/liberty',
             center: [136.175, 35.945],
             zoom: 14
         });
 
         map.on('load', () => {
-            // 1. ルート線を地図に追加
+            // 1. 道路に沿った正確なルート線を追加
             map.addSource('route', {
                 'type': 'geojson',
                 'data': {
@@ -102,11 +108,11 @@
                 });
             });
 
-            // 3. スタートとゴールのマーカーを設置
+            // 3. スタート（鯖江駅）とゴール（道の駅）のマーカー設置
             new maplibregl.Marker({ color: '#3388ff' }).setLngLat(sabaeStation).setPopup(new maplibregl.Popup().setHTML('<b>スタート: 鯖江駅</b>')).addTo(map);
             new maplibregl.Marker({ color: '#ff8800' }).setLngLat(michinoEkiNishiyama).setPopup(new maplibregl.Popup().setHTML('<b>目的地: 道の駅 西山公園</b>')).addTo(map);
 
-            // 4. 全地点が収まる画角に自動調整
+            // 4. 自動画角調整
             const bounds = new maplibregl.LngLatBounds();
             bounds.extend(sabaeStation);
             bounds.extend(michinoEkiNishiyama);

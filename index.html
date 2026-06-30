@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>鯖江駅〜道の駅 西山公園 安全ルートマップ</title>
+    <title>鯖江駅〜道の駅 西山公園 マップ</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <style>
         html, body {
@@ -14,10 +14,6 @@
         #map {
             width: 100%;
             height: 100%;
-        }
-        .leaflet-popup-content {
-            font-size: 14px;
-            font-family: sans-serif;
         }
     </style>
 </head>
@@ -37,7 +33,7 @@
 
         // --- ランドマークの設定 ---
         const sabaeStation = [35.94318, 136.18844];        // スタート：鯖江駅
-        const michinoEkiNishiyama = [35.9486, 136.1705]; // 目的地：道の駅 西山公園（正しい位置）
+        const michinoEkiNishiyama = [35.9493, 136.1687]; // 目的地：道の駅 西山公園（修正版）
 
         // 鯖江駅のマーカー
         L.marker(sabaeStation).addTo(map)
@@ -66,10 +62,10 @@
                 weight: 1.5,
                 opacity: 1,
                 fillOpacity: 0.8
-            }).addTo(map).bindPopup(`⚠️ 事故現場地点 ${index + 1}`);
+            }).addTo(map);
         });
 
-        // --- 4. 事故現場を完全に回避して大通り（主要道路）を進む最適ルート ---
+        // --- 4. 事故現場を完全に回避して大通り（主要道路）を進む最短ルート ---
         const safeRoutePoints = [
             sabaeStation,
             [35.9425, 136.1883], // 駅前を南へ出る
@@ -78,9 +74,100 @@
             [35.9422, 136.1751], // 水落町交差点を北へ右折（つつじ通り）
             [35.9437, 136.1753], // 市役所東交差点付近を直進
             [35.9466, 136.1756], // 栄町交差点を直進
-            [35.9474, 136.1757], // 嚮陽会館前の交差点を左折（西山公園側へ向かう道路）
-            [35.9471, 136.1724], // 古町交差点
-            [35.9482, 136.1713], // 道路に沿って北西へ
+            [35.9482, 136.1758], // つつじ通りを北上
+            [35.9488, 136.1758], // 桜町交差点を左折（西山公園側へ向かう道路）
+            [35.9484, 136.1717], // 長泉寺交差点を直進
+            michinoEkiNishiyama  // ゴール：道の駅 西山公園
+        ];
+        
+        // ルートの線を引く
+        L.polyline(safeRoutePoints, {color: '#0066ff', weight: 6, opacity: 0.75}).addTo(map);
+
+        // 5. 自動ズーム調整
+        const bounds = L.latLngBounds([sabaeStation, michinoEkiNishiyama, ...accidentCoords]);
+        map.fitBounds(bounds, { padding: [40, 40] });
+
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>鯖江駅〜道の駅 西山公園 マップ</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        // 1. 地図の初期化
+        const map = L.map('map').setView([35.945, 136.175], 15);
+
+        // 2. OpenStreetMapのタイルレイヤーを追加
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // --- ランドマークの設定 ---
+        const sabaeStation = [35.94318, 136.18844];        // スタート：鯖江駅
+        const michinoEkiNishiyama = [35.9493, 136.1687]; // 目的地：道の駅 西山公園（修正版）
+
+        // 鯖江駅のマーカー
+        L.marker(sabaeStation).addTo(map)
+            .bindPopup('<b>スタート: 鯖江駅</b>').openPopup();
+
+        // 道の駅 西山公園のマーカー
+        L.marker(michinoEkiNishiyama).addTo(map)
+            .bindPopup('<b>目的地: 道の駅 西山公園</b>');
+
+        // --- 3. 事故現場の座標リスト ---
+        const accidentCoords = [
+            [35.943611, 136.188500], [35.943444, 136.188417], [35.942972, 136.188472], 
+            [35.943389, 136.188056], [35.943556, 136.185917], [35.943722, 136.185028], 
+            [35.943861, 136.182639], [35.944472, 136.180250], [35.943917, 136.180250], 
+            [35.943806, 136.179778], [35.943833, 136.178639], [35.945361, 136.179694], 
+            [35.945583, 136.179833], [35.945889, 136.180028], [35.946667, 136.180500], 
+            [35.947583, 136.181111]
+        ];
+
+        // 事故現場をプロット
+        accidentCoords.forEach((coord, index) => {
+            L.circleMarker(coord, {
+                radius: 7,
+                fillColor: "#ff3333",
+                color: "#fff",
+                weight: 1.5,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map);
+        });
+
+        // --- 4. 事故現場を完全に回避して大通り（主要道路）を進む最短ルート ---
+        const safeRoutePoints = [
+            sabaeStation,
+            [35.9425, 136.1883], // 駅前を南へ出る
+            [35.9416, 136.1881], // 鯖江駅西交差点を西へ右折（五郎丸鯖江線）
+            [35.9419, 136.1809], // 昭和町交差点を直進
+            [35.9422, 136.1751], // 水落町交差点を北へ右折（つつじ通り）
+            [35.9437, 136.1753], // 市役所東交差点付近を直進
+            [35.9466, 136.1756], // 栄町交差点を直進
+            [35.9482, 136.1758], // つつじ通りを北上
+            [35.9488, 136.1758], // 桜町交差点を左折（西山公園側へ向かう道路）
+            [35.9484, 136.1717], // 長泉寺交差点を直進
             michinoEkiNishiyama  // ゴール：道の駅 西山公園
         ];
         

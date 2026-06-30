@@ -2,64 +2,45 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>鯖江駅〜道の駅西山公園（事故回避ルート）</title>
+    <title>Sabae Route</title>
     <style>
-        /* 画面全体にマップを表示 */
-        #map {
-            height: 100vh;
-            width: 100%;
-        }
-        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100%; }
+        body { margin: 0; }
     </style>
     <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
 </head>
 <body>
-
     <div id="map"></div>
-
     <script>
         function initMap() {
-            // 1. マップの初期化（鯖江駅周辺を中心に）
-            const sabaeStation = { lat: 35.9433, lng: 136.1884 };
             const map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 15,
-                center: sabaeStation
+                center: { lat: 35.9433, lng: 136.1884 }
             });
 
-            // 2. ルート描画用のサービスをセットアップ
             const directionsService = new google.maps.DirectionsService();
-            const directionsRenderer = new google.maps.DirectionsRenderer({
-                map: map,
-                polylineOptions: {
-                    strokeColor: "#FF0000", // ルートの線の色（赤）
-                    strokeOpacity: 0.8,
-                    strokeWeight: 5
-                }
-            });
+            const directionsRenderer = new google.maps.DirectionsRenderer({ map: map });
 
-            // 3. 事故現場（回避エリア）の座標
-            const accidentLocation = { lat: 35.9435, lng: 136.1853 }; // 嚮陽通り付近
-
-            // 4. 経由地（ウェイポイント）を設定して事故現場を強制迂回
-            // ※車ルートの南側大通り（県道104号・212号）を通るように経由地を指定
+            // 事故を回避するための南側迂回経由地
             const waypoints = [
-                {
-                    location: new google.maps.LatLng(35.9388, 136.1855), // 鯖江高校前交差点付近
-                    stopover: false
-                },
-                {
-                    location: new google.maps.LatLng(35.9392, 136.1742), // 有定町交差点付近
-                    stopover: false
-                }
+                { location: new google.maps.LatLng(35.9388, 136.1855), stopover: false },
+                { location: new google.maps.LatLng(35.9392, 136.1742), stopover: false }
             ];
 
-            // 5. ルートの配信リクエスト
             const request = {
-                origin: sabaeStation, // 出発地: 鯖江駅
-                destination: { lat: 35.9463, lng: 136.1718 }, // 目的地: 道の駅 西山公園
-                waypoints: waypoints, // 事故回避のための経由地
+                origin: { lat: 35.9433, lng: 136.1884 }, // 鯖江駅
+                destination: { lat: 35.9451, lng: 136.1706 }, // 西山公園駅
+                waypoints: waypoints,
                 optimizeWaypoints: true,
-                travelMode: google.maps.TravelMode.DRIVING // 自動車モード（WALKING, BICYCLEに変更可能）
+                travelMode: google.maps.TravelMode.DRIVING // WALKING または BICYCLE に変更可
             };
 
-            // 6. ルートを計算してマップ
+            directionsService.route(request, function(result, status) {
+                if (status === google.maps.DirectionsStatus.OK) {
+                    directionsRenderer.setDirections(result);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
